@@ -16,36 +16,27 @@
 package com.github.rodm.teamcity
 
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
-import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-import static com.github.rodm.teamcity.GradleMatchers.hasDependency
-import static org.junit.Assert.assertThat
+class ConfigurationTestCase {
 
-class TeamCityCommonPluginTest {
+    final ResettableOutputEventListener outputEventListener = new ResettableOutputEventListener()
+
+    @Rule
+    public final ConfigureLogging logging = new ConfigureLogging(outputEventListener)
 
     @Rule
     public final TemporaryFolder projectDir = new TemporaryFolder()
 
-    private Project project
+    Project project
+
+    TeamCityPluginExtension extension
 
     @Before
-    void setup() {
+    void createProject() {
         project = ProjectBuilder.builder().withProjectDir(projectDir.root).build()
-    }
-
-    @Test
-    void 'apply adds common-api to the provided configuration'() {
-        project.apply plugin: 'java'
-        project.apply plugin: 'com.github.rodm.teamcity-common'
-
-        project.evaluate()
-
-        Configuration configuration = project.configurations.getByName('provided')
-        assertThat(configuration, hasDependency('org.jetbrains.teamcity', 'common-api', '9.0'))
     }
 }

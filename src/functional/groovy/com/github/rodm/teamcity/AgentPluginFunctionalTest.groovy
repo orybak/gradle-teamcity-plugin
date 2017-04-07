@@ -27,9 +27,8 @@ import java.util.zip.ZipFile
 import static org.gradle.testkit.runner.TaskOutcome.*
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
-import static org.junit.Assert.assertEquals
 
-public class AgentPluginFunctionalTest {
+class AgentPluginFunctionalTest {
 
     static final String BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR = """
         plugins {
@@ -74,7 +73,7 @@ public class AgentPluginFunctionalTest {
     private File buildFile
 
     @Before
-    public void setup() throws IOException {
+    void setup() throws IOException {
         buildFile = testProjectDir.newFile("build.gradle")
     }
 
@@ -87,7 +86,7 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void agentPluginBuildAndPackage() {
+    void agentPluginBuildAndPackage() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         File settingsFile = testProjectDir.newFile('settings.gradle')
@@ -97,9 +96,9 @@ public class AgentPluginFunctionalTest {
 
         BuildResult result = executeBuild()
 
-        assertEquals(result.task(":generateAgentDescriptor").getOutcome(), SUCCESS)
-        assertEquals(result.task(":processAgentDescriptor").getOutcome(), SKIPPED)
-        assertEquals(result.task(":agentPlugin").getOutcome(), SUCCESS)
+        assertThat(result.task(":generateAgentDescriptor").getOutcome(), is(SUCCESS))
+        assertThat(result.task(":processAgentDescriptor").getOutcome(), is(SKIPPED))
+        assertThat(result.task(":agentPlugin").getOutcome(), is(SUCCESS))
 
         ZipFile pluginFile = new ZipFile(new File(testProjectDir.root, 'build/distributions/test-plugin-agent.zip'))
         List<String> entries = pluginFile.entries().collect { it.name }
@@ -108,10 +107,10 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void agentPluginWithDescriptorFile() {
+    void agentPluginWithDescriptorFile() {
         buildFile << BUILD_SCRIPT_WITH_FILE_DESCRIPTOR
 
-        File descriptorFile = testProjectDir.newFile("teamcity-plugin.xml");
+        File descriptorFile = testProjectDir.newFile("teamcity-plugin.xml")
         descriptorFile << """<?xml version="1.0" encoding="UTF-8"?>
             <teamcity-agent-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                                    xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
@@ -121,14 +120,14 @@ public class AgentPluginFunctionalTest {
 
         BuildResult result = executeBuild()
 
-        assertEquals(result.task(":generateAgentDescriptor").getOutcome(), SKIPPED)
-        assertEquals(result.task(":processAgentDescriptor").getOutcome(), SUCCESS)
-        assertEquals(result.task(":agentPlugin").getOutcome(), SUCCESS)
+        assertThat(result.task(":generateAgentDescriptor").getOutcome(), is(SKIPPED))
+        assertThat(result.task(":processAgentDescriptor").getOutcome(), is(SUCCESS))
+        assertThat(result.task(":agentPlugin").getOutcome(), is(SUCCESS))
         assertThat(result.getOutput(), not(containsString("Plugin descriptor is invalid")))
     }
 
     @Test
-    public void agentPluginFailsWithMissingDescriptorFile() {
+    void agentPluginFailsWithMissingDescriptorFile() {
         buildFile << BUILD_SCRIPT_WITH_FILE_DESCRIPTOR
 
         BuildResult result = GradleRunner.create()
@@ -142,10 +141,10 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void invalidAgentPluginDescriptor() {
+    void invalidAgentPluginDescriptor() {
         buildFile << BUILD_SCRIPT_WITH_FILE_DESCRIPTOR
 
-        File descriptorFile = testProjectDir.newFile("teamcity-plugin.xml");
+        File descriptorFile = testProjectDir.newFile("teamcity-plugin.xml")
         descriptorFile << """<?xml version="1.0" encoding="UTF-8"?>
             <teamcity-agent-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                              xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
@@ -158,7 +157,7 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void agentPluginNoWarningsWithDefinitionFile() {
+    void agentPluginNoWarningsWithDefinitionFile() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         File metaInfDir = testProjectDir.newFolder('src', 'main', 'resources', 'META-INF')
@@ -172,7 +171,7 @@ public class AgentPluginFunctionalTest {
 
 
     @Test
-    public void agentPluginWarnsAboutMissingDefinitionFile() {
+    void agentPluginWarnsAboutMissingDefinitionFile() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         BuildResult result = executeBuild()
@@ -181,7 +180,7 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void noWarningWithValidDefinitionFile() {
+    void noWarningWithValidDefinitionFile() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         File exampleJavaDir = testProjectDir.newFolder('src', 'main', 'java', 'example')
@@ -204,7 +203,7 @@ public class AgentPluginFunctionalTest {
 
 
     @Test
-    public void warningAboutMissingClass() {
+    void warningAboutMissingClass() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         File metaInfDir = testProjectDir.newFolder('src', 'main', 'resources', 'META-INF')
@@ -219,7 +218,7 @@ public class AgentPluginFunctionalTest {
     }
 
     @Test
-    public void supportOlderPluginDefinitionFile() {
+    void supportOlderPluginDefinitionFile() {
         buildFile << BUILD_SCRIPT_WITH_INLINE_DESCRIPTOR
 
         File exampleJavaDir = testProjectDir.newFolder('src', 'main', 'java', 'example')

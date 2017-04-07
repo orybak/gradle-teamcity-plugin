@@ -20,50 +20,59 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 import static com.github.rodm.teamcity.GradleMatchers.hasDependency
+import static com.github.rodm.teamcity.TestSupport.normalizePath
+import static org.hamcrest.CoreMatchers.endsWith
 import static org.hamcrest.CoreMatchers.equalTo
 import static org.hamcrest.CoreMatchers.hasItem
 import static org.hamcrest.CoreMatchers.is
 import static org.hamcrest.CoreMatchers.not
 import static org.hamcrest.CoreMatchers.notNullValue
+import static org.hamcrest.Matchers.hasSize
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertThat
 import static org.junit.Assert.assertTrue
 
-public class TeamCityServerPluginTest {
+class TeamCityServerPluginTest {
 
-    private Project project;
+    @Rule
+    public final TemporaryFolder projectDir = new TemporaryFolder()
+
+    private Project project
 
     @Before
-    public void setup() {
-        project = ProjectBuilder.builder().build()
+    void setup() {
+        project = ProjectBuilder.builder().withProjectDir(projectDir.root).build()
     }
 
     @Test
-    public void applyBasePlugin() {
+    void applyBasePlugin() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         assertTrue(project.plugins.hasPlugin(BasePlugin))
     }
 
     @Test
-    public void addTeamCityPluginExtension() {
+    void addTeamCityPluginExtension() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         assertTrue(project.extensions.getByName('teamcity') instanceof TeamCityPluginExtension)
     }
 
     @Test
-    public void defaultVersion() {
+    void defaultVersion() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         assertEquals('9.0', project.extensions.getByName('teamcity').version)
     }
 
     @Test
-    public void specifiedVersion() {
+    void specifiedVersion() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         project.teamcity {
@@ -73,7 +82,29 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void subprojectInheritsVersion() {
+    void 'return major number for API version'() {
+        project.apply plugin: 'com.github.rodm.teamcity-server'
+
+        project.teamcity {
+            version = '10.0.4'
+        }
+        TeamCityPluginExtension extension = project.extensions.getByType(TeamCityPluginExtension)
+        assertEquals(10, extension.getMajorVersion())
+    }
+
+    @Test
+    void 'return null for non numeric API version'() {
+        project.apply plugin: 'com.github.rodm.teamcity-server'
+
+        project.teamcity {
+            version = 'SNAPSHOT'
+        }
+        TeamCityPluginExtension extension = project.extensions.getByType(TeamCityPluginExtension)
+        assertNull(null, extension.getMajorVersion())
+    }
+
+    @Test
+    void subprojectInheritsVersion() {
         Project rootProject = project
 
         rootProject.apply plugin: 'com.github.rodm.teamcity-server'
@@ -88,7 +119,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void configurationsCreatedWithoutJavaPlugin() {
+    void configurationsCreatedWithoutJavaPlugin() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         def configuration = project.configurations.getByName('agent')
@@ -108,7 +139,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void providedConfigurationNotCreatedWithoutJavaPlugin() {
+    void providedConfigurationNotCreatedWithoutJavaPlugin() {
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
         def configurationNames = project.configurations.getNames()
@@ -116,7 +147,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void configurationsCreatedWithJavaPlugin() {
+    void configurationsCreatedWithJavaPlugin() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
@@ -136,7 +167,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void 'ConfigureRepositories adds MavenCentral and JetBrains repositories'() {
+    void 'ConfigureRepositories adds MavenCentral and JetBrains repositories'() {
         project.apply plugin: 'java'
 
         TeamCityPluginExtension extension = new TeamCityPluginExtension(project)
@@ -146,11 +177,11 @@ public class TeamCityServerPluginTest {
 
         List<String> urls = project.repositories.collect { repository -> repository.url.toString() }
         assertThat(urls, hasItem('https://repo1.maven.org/maven2/'))
-        assertThat(urls, hasItem('http://download.jetbrains.com/teamcity-repository'))
+        assertThat(urls, hasItem('https://download.jetbrains.com/teamcity-repository'))
     }
 
     @Test
-    public void 'ConfigureRepositories adds no repositories when Java plugin is not applied'() {
+    void 'ConfigureRepositories adds no repositories when Java plugin is not applied'() {
         TeamCityPluginExtension extension = new TeamCityPluginExtension(project)
         TeamCityPlugin.ConfigureRepositories configureRepositories = new TeamCityPlugin.ConfigureRepositories(extension)
 
@@ -160,7 +191,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void 'ConfigureRepositories adds no repositories when defaultRepositories is false'() {
+    void 'ConfigureRepositories adds no repositories when defaultRepositories is false'() {
         TeamCityPluginExtension extension = new TeamCityPluginExtension(project)
         TeamCityPlugin.ConfigureRepositories configureRepositories = new TeamCityPlugin.ConfigureRepositories(extension)
         extension.defaultRepositories = false
@@ -171,7 +202,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void 'apply adds server-api to the provided configuration'() {
+    void 'apply adds server-api to the provided configuration'() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
@@ -182,7 +213,7 @@ public class TeamCityServerPluginTest {
     }
 
     @Test
-    public void 'apply adds tests-support to the testCompile configuration'() {
+    void 'apply adds tests-support to the testCompile configuration'() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
@@ -190,5 +221,17 @@ public class TeamCityServerPluginTest {
 
         Configuration configuration = project.configurations.getByName('testCompile')
         assertThat(configuration, hasDependency('org.jetbrains.teamcity', 'tests-support', '9.0'))
+    }
+
+    @Test
+    void 'server-side plugin artifact is published to the plugin configuration'() {
+        project.apply plugin: 'java'
+        project.apply plugin: 'com.github.rodm.teamcity-server'
+
+        project.evaluate()
+
+        Configuration configuration = project.configurations.getByName('plugin')
+        assertThat(configuration.artifacts, hasSize(1))
+        assertThat(normalizePath(configuration.artifacts[0].file), endsWith('/build/distributions/test.zip'))
     }
 }

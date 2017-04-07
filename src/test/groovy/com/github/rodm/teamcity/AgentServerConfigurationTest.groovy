@@ -22,6 +22,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import org.junit.rules.TemporaryFolder
 
 import static org.hamcrest.CoreMatchers.isA
 import static org.junit.Assert.assertThat
@@ -29,17 +30,20 @@ import static org.junit.Assert.assertThat
 class AgentServerConfigurationTest {
 
     @Rule
+    public final TemporaryFolder projectDir = new TemporaryFolder()
+
+    @Rule
     public ExpectedException thrown = ExpectedException.none()
 
-    private Project project;
+    private Project project
 
     @Before
-    public void setup() {
-        project = ProjectBuilder.builder().build()
+    void setup() {
+        project = ProjectBuilder.builder().withProjectDir(projectDir.root).build()
     }
 
     @Test
-    public void cannotApplyServerPluginWithAgentAndJavaPlugin() {
+    void cannotApplyServerPluginWithAgentAndJavaPlugin() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-agent'
 
@@ -49,7 +53,7 @@ class AgentServerConfigurationTest {
     }
 
     @Test
-    public void cannotApplyAgentPluginWithServerAndavaPlugin() {
+    void cannotApplyAgentPluginWithServerAndavaPlugin() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-server'
 
@@ -59,13 +63,13 @@ class AgentServerConfigurationTest {
     }
 
     @Test
-    public void applyBothPlugins() {
+    void applyBothPlugins() {
         project.apply plugin: 'com.github.rodm.teamcity-agent'
         project.apply plugin: 'com.github.rodm.teamcity-server'
     }
 
     @Test
-    public void applyAndConfigureBothPlugins() {
+    void applyAndConfigureBothPlugins() {
         project.apply plugin: 'com.github.rodm.teamcity-agent'
         project.apply plugin: 'com.github.rodm.teamcity-server'
 

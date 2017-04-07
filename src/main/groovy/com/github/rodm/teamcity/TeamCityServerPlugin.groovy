@@ -15,7 +15,6 @@
  */
 package com.github.rodm.teamcity
 
-import com.github.rodm.teamcity.tasks.DeployPlugin
 import com.github.rodm.teamcity.tasks.GenerateServerPluginDescriptor
 import com.github.rodm.teamcity.tasks.InstallTeamCity
 import com.github.rodm.teamcity.tasks.ProcessDescriptor
@@ -23,12 +22,13 @@ import com.github.rodm.teamcity.tasks.StartAgent
 import com.github.rodm.teamcity.tasks.StartServer
 import com.github.rodm.teamcity.tasks.StopAgent
 import com.github.rodm.teamcity.tasks.StopServer
-import com.github.rodm.teamcity.tasks.UndeployPlugin
 import com.github.rodm.teamcity.tasks.Unpack
 import de.undercouch.gradle.tasks.download.Download
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.bundling.Zip
 
 class TeamCityServerPlugin extends TeamCityPlugin {
@@ -106,6 +106,8 @@ class TeamCityServerPlugin extends TeamCityPlugin {
         generateDescriptor.onlyIf { extension.server.descriptor != null && extension.server.descriptor instanceof ServerPluginDescriptor }
         packagePlugin.dependsOn generateDescriptor
 
+        project.artifacts.add('plugin', packagePlugin)
+
         project.afterEvaluate {
             Zip serverPlugin = (Zip) project.tasks.getByPath('serverPlugin')
             if (extension.server.archiveName) {
@@ -114,7 +116,7 @@ class TeamCityServerPlugin extends TeamCityPlugin {
         }
     }
 
-    private void configureEnvironmentTasks(Project project, TeamCityPluginExtension extension) {
+    private static void configureEnvironmentTasks(Project project, TeamCityPluginExtension extension) {
         project.afterEvaluate(new ConfigureEnvironmentTasksAction(extension))
     }
 
@@ -148,18 +150,14 @@ class TeamCityServerPlugin extends TeamCityPlugin {
                 def install = project.tasks.create(String.format("install%s", name), InstallTeamCity)
                 install.dependsOn unpack
 
-                def deployPlugin = project.tasks.create(String.format('deployPluginTo%s', name), DeployPlugin) {
-                    conventionMapping.map('files') { project.files(environment.plugins) }
-                    conventionMapping.map('target') { project.file(environment.pluginsDir) }
+                def deployPlugin = project.tasks.create(String.format('deployTo%s', name), Copy) {
+                    from { environment.plugins }
+                    into { environment.pluginsDir }
                 }
                 deployPlugin.dependsOn build
 
-                def undeployPlugin = project.tasks.create(String.format('undeployPluginFrom%s', name), UndeployPlugin) {
-                    conventionMapping.map('files') {
-                        project.files(project.files(environment.plugins).collect { plugin ->
-                            "${environment.pluginsDir}/${plugin.name}"
-                        })
-                    }
+                def undeployPlugin = project.tasks.create(String.format('undeployFrom%s', name), Delete) {
+                    delete { deployPlugin.outputs.files }
                 }
 
                 def startServer = project.tasks.create(String.format('start%sServer', name), StartServer) {
@@ -176,20 +174,20 @@ class TeamCityServerPlugin extends TeamCityPlugin {
                 }
                 stopServer.finalizedBy undeployPlugin
 
-                def startAgent = project.tasks.create(String.format('start%sAgent', name), StartAgent) {
+                project.tasks.create(String.format('start%sAgent', name), StartAgent) {
                     conventionMapping.map('homeDir') { environment.homeDir }
                     conventionMapping.map('javaHome') { environment.javaHome }
                     conventionMapping.map('agentOptions') { environment.agentOptions }
                 }
 
-                def stopAgent = project.tasks.create(String.format('stop%sAgent', name), StopAgent) {
+                project.tasks.create(String.format('stop%sAgent', name), StopAgent) {
                     conventionMapping.map('homeDir') { environment.homeDir }
                     conventionMapping.map('javaHome') { environment.javaHome }
                 }
             }
         }
 
-        private void defaultMissingProperties(Project project, ServerPluginConfiguration server, TeamCityEnvironment environment) {
+        private static void defaultMissingProperties(Project project, ServerPluginConfiguration server, TeamCityEnvironment environment) {
             environment.with {
                 downloadUrl = downloadUrl ?: "${server.baseDownloadUrl}/TeamCity-${version}.tar.gz"
                 homeDir = homeDir ?: project.file("${server.baseHomeDir}/TeamCity-${version}")
@@ -205,7 +203,7 @@ class TeamCityServerPlugin extends TeamCityPlugin {
             }
         }
 
-        private String toFilename(String url) {
+        private static String toFilename(String url) {
             return url[(url.lastIndexOf('/') + 1)..-1]
         }
     }

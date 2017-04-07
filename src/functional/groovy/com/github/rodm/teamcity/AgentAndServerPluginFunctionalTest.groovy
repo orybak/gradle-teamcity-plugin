@@ -27,9 +27,8 @@ import java.util.zip.ZipFile
 import static org.gradle.testkit.runner.TaskOutcome.*
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
-import static org.junit.Assert.assertEquals
 
-public class AgentAndServerPluginFunctionalTest {
+class AgentAndServerPluginFunctionalTest {
 
     @Rule
     public final TemporaryFolder testProjectDir = new TemporaryFolder()
@@ -37,7 +36,7 @@ public class AgentAndServerPluginFunctionalTest {
     private File buildFile
 
     @Before
-    public void setup() throws IOException {
+    void setup() throws IOException {
         buildFile = testProjectDir.newFile("build.gradle")
     }
 
@@ -50,7 +49,7 @@ public class AgentAndServerPluginFunctionalTest {
     }
 
     @Test
-    public void agentAndServerPluginPackage() {
+    void agentAndServerPluginPackage() {
         buildFile << """
             plugins {
                 id 'com.github.rodm.teamcity-agent'
@@ -84,8 +83,8 @@ public class AgentAndServerPluginFunctionalTest {
 
         BuildResult result = executeBuild()
 
-        assertEquals(result.task(":agentPlugin").getOutcome(), SUCCESS)
-        assertEquals(result.task(":serverPlugin").getOutcome(), SUCCESS)
+        assertThat(result.task(":agentPlugin").getOutcome(), is(SUCCESS))
+        assertThat(result.task(":serverPlugin").getOutcome(), is(SUCCESS))
 
         ZipFile agentPluginFile = new ZipFile(new File(testProjectDir.root, 'build/distributions/test-plugin-agent.zip'))
         List<String> agentEntries = agentPluginFile.entries().collect { it.name }
@@ -100,7 +99,7 @@ public class AgentAndServerPluginFunctionalTest {
     }
 
     @Test
-    public void multiProjectPlugin() {
+    void multiProjectPlugin() {
         buildFile << """
             plugins {
                 id 'com.github.rodm.teamcity-agent'
@@ -159,8 +158,8 @@ public class AgentAndServerPluginFunctionalTest {
 
         BuildResult result = executeBuild()
 
-        assertEquals(result.task(":agentPlugin").getOutcome(), SUCCESS)
-        assertEquals(result.task(":serverPlugin").getOutcome(), SUCCESS)
+        assertThat(result.task(":agentPlugin").getOutcome(), is(SUCCESS))
+        assertThat(result.task(":serverPlugin").getOutcome(), is(SUCCESS))
 
         ZipFile agentPluginFile = new ZipFile(new File(testProjectDir.root, 'build/distributions/test-plugin-agent.zip'))
         List<String> agentEntries = agentPluginFile.entries().collect { it.name }
@@ -179,7 +178,7 @@ public class AgentAndServerPluginFunctionalTest {
     }
 
     @Test
-    public void pluginsWithJavaFail() {
+    void pluginsWithJavaFail() {
         buildFile << """
             plugins {
                 id 'java'

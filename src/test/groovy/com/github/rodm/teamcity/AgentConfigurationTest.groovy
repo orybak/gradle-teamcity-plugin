@@ -16,15 +16,13 @@
 package com.github.rodm.teamcity
 
 import org.gradle.api.InvalidUserDataException
-import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 
 import static com.github.rodm.teamcity.GradleMatchers.hasDependency
+import static com.github.rodm.teamcity.TestSupport.normalizePath
 import static org.hamcrest.CoreMatchers.containsString
 import static org.hamcrest.CoreMatchers.endsWith
 import static org.hamcrest.CoreMatchers.isA
@@ -37,26 +35,16 @@ import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.fail
 
-class AgentConfigurationTest {
-
-    private final ResettableOutputEventListener outputEventListener = new ResettableOutputEventListener()
-
-    @Rule
-    public final ConfigureLogging logging = new ConfigureLogging(outputEventListener)
-
-    private Project project;
-
-    private TeamCityPluginExtension extension
+class AgentConfigurationTest extends ConfigurationTestCase {
 
     @Before
-    public void setup() {
-        project = ProjectBuilder.builder().build()
+    void applyPlugin() {
         project.apply plugin: 'com.github.rodm.teamcity-agent'
         extension = project.extensions.getByType(TeamCityPluginExtension)
     }
 
     @Test
-    public void createDescriptorForPluginDeployment() {
+    void createDescriptorForPluginDeployment() {
         project.teamcity {
             agent {
                 descriptor {
@@ -70,7 +58,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void createDescriptorForPluginDeploymentWithExecutableFiles() {
+    void createDescriptorForPluginDeploymentWithExecutableFiles() {
         project.teamcity {
             agent {
                 descriptor {
@@ -91,7 +79,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void createDescriptorForToolDeployment() {
+    void createDescriptorForToolDeployment() {
         project.teamcity {
             agent {
                 descriptor {
@@ -105,7 +93,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void createDescriptorForToolDeploymentWithExecutableFiles() {
+    void createDescriptorForToolDeploymentWithExecutableFiles() {
         project.teamcity {
             agent {
                 descriptor {
@@ -124,7 +112,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void filePluginDescriptor() {
+    void filePluginDescriptor() {
         project.teamcity {
             agent {
                 descriptor = project.file('test-teamcity-plugin.xml')
@@ -136,7 +124,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void agentPluginTasks() {
+    void agentPluginTasks() {
         project.teamcity {
             agent {
                 descriptor {}
@@ -149,7 +137,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void agentPluginTasksWithFileDescriptor() {
+    void agentPluginTasksWithFileDescriptor() {
         project.teamcity {
             agent {
                 descriptor = project.file('test-teamcity-plugin')
@@ -162,7 +150,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void agentPluginDescriptorReplacementTokens() {
+    void agentPluginDescriptorReplacementTokens() {
         project.teamcity {
             agent {
                 descriptor = project.file('test-teamcity-plugin')
@@ -177,7 +165,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void agentPluginWithAdditionalFiles() {
+    void agentPluginWithAdditionalFiles() {
         project.teamcity {
             agent {
                 files {
@@ -189,7 +177,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void deprecatedDescriptorCreationForAgentProjectType() {
+    void deprecatedDescriptorCreationForAgentProjectType() {
         project.teamcity {
             descriptor {
             }
@@ -200,7 +188,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void deprecatedDescriptorAssignmentForAgentProjectType() {
+    void deprecatedDescriptorAssignmentForAgentProjectType() {
         project.teamcity {
             descriptor = project.file('teamcity-plugin.xml')
         }
@@ -210,7 +198,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void deprecatedAdditionalFilesForAgentPlugin() {
+    void deprecatedAdditionalFilesForAgentPlugin() {
         project.teamcity {
             files {
             }
@@ -221,7 +209,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void deprecatedTokensForAgentPlugin() {
+    void deprecatedTokensForAgentPlugin() {
         project.teamcity {
             tokens VERSION: project.version
         }
@@ -231,7 +219,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void deprecatedTokensAssignmentForAgentPlugin() {
+    void deprecatedTokensAssignmentForAgentPlugin() {
         project.teamcity {
             tokens = [VERSION: project.version]
         }
@@ -241,7 +229,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void configuringServerWithOnlyAgentPluginFails() {
+    void configuringServerWithOnlyAgentPluginFails() {
         try {
             project.teamcity {
                 server {}
@@ -254,7 +242,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void 'apply adds agent-api to the provided configuration'() {
+    void 'apply adds agent-api to the provided configuration'() {
         project.apply plugin: 'java'
         project.apply plugin: 'com.github.rodm.teamcity-agent'
 
@@ -265,7 +253,19 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void 'apply configures archive name using defaults'() {
+    void 'agent-side plugin artifact is published to the plugin configuration'() {
+        project.apply plugin: 'java'
+        project.apply plugin: 'com.github.rodm.teamcity-agent'
+
+        project.evaluate()
+
+        Configuration configuration = project.configurations.getByName('plugin')
+        assertThat(configuration.artifacts, hasSize(1))
+        assertThat(normalizePath(configuration.artifacts[0].file), endsWith('/build/distributions/test-agent.zip'))
+    }
+
+    @Test
+    void 'apply configures archive name using defaults'() {
         project.version = '1.2.3'
         project.teamcity {
             agent {
@@ -280,7 +280,7 @@ class AgentConfigurationTest {
     }
 
     @Test
-    public void 'apply configures archive name using configuration value'() {
+    void 'apply configures archive name using configuration value'() {
         project.version = '1.2.3'
         project.teamcity {
             agent {

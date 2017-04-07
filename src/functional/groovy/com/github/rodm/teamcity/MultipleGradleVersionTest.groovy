@@ -15,6 +15,7 @@
  */
 package com.github.rodm.teamcity
 
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Before
@@ -27,9 +28,10 @@ import java.util.zip.ZipFile
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.hamcrest.CoreMatchers.containsString
 import static org.hamcrest.CoreMatchers.hasItem
+import static org.hamcrest.CoreMatchers.is
 import static org.hamcrest.CoreMatchers.not
 import static org.hamcrest.MatcherAssert.assertThat
-import static org.junit.Assert.assertEquals
+import static org.junit.Assume.assumeThat
 
 class MultipleGradleVersionTest {
 
@@ -41,7 +43,7 @@ class MultipleGradleVersionTest {
     private File buildFile
 
     @Before
-    public void setup() throws IOException {
+    void setup() throws IOException {
         buildFile = projectDir.newFile("build.gradle")
 
         buildFile << """
@@ -166,44 +168,47 @@ class MultipleGradleVersionTest {
     }
 
     @Test
-    public void buildPluginUsingGradle_2_8() {
+    void buildPluginUsingGradle_2_8() {
+        // Test is unreliable on Windows (https://github.com/rodm/gradle-teamcity-plugin/issues/23)
+        assumeThat(OperatingSystem.current(), not(OperatingSystem.forName('windows')))
+
         BuildResult result = executeBuild('2.8')
         checkBuild(result)
     }
 
     @Test
-    public void buildPluginUsingGradle_2_14_1() {
+    void buildPluginUsingGradle_2_14_1() {
         BuildResult result = executeBuild('2.14.1')
         checkBuild(result)
     }
 
     @Test
-    public void buildPluginUsingGradle_3_0() {
+    void buildPluginUsingGradle_3_0() {
         BuildResult result = executeBuild('3.0')
         checkBuild(result)
     }
 
     @Test
-    public void buildPluginUsingGradle_3_1() {
+    void buildPluginUsingGradle_3_1() {
         BuildResult result = executeBuild('3.1')
         checkBuild(result)
     }
 
     @Test
-    public void buildPluginUsingGradle_3_2() {
+    void buildPluginUsingGradle_3_2() {
         BuildResult result = executeBuild('3.2')
         checkBuild(result)
     }
 
     @Test
-    public void 'build plugin using Gradle 3.3'() {
+    void 'build plugin using Gradle 3.3'() {
         BuildResult result = executeBuild('3.3')
         checkBuild(result)
     }
 
     @Test
-    public void 'build plugin using Gradle 3.4'() {
-        BuildResult result = executeBuild('3.4')
+    void 'build plugin using Gradle 3.4.1'() {
+        BuildResult result = executeBuild('3.4.1')
         checkBuild(result)
     }
 
@@ -218,8 +223,8 @@ class MultipleGradleVersionTest {
     }
 
     private void checkBuild(BuildResult result) {
-        assertEquals(result.task(":agent:agentPlugin").getOutcome(), SUCCESS)
-        assertEquals(result.task(":serverPlugin").getOutcome(), SUCCESS)
+        assertThat(result.task(":agent:agentPlugin").getOutcome(), is(SUCCESS))
+        assertThat(result.task(":serverPlugin").getOutcome(), is(SUCCESS))
 
         assertThat(result.getOutput(), not(containsString(NO_DEFINITION_WARNING)))
         assertThat(result.getOutput(), not(containsString('but the implementation class')))

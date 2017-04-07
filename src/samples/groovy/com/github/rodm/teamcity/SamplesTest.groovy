@@ -18,70 +18,70 @@ package com.github.rodm.teamcity
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
+import static org.hamcrest.MatcherAssert.assertThat
+import static org.hamcrest.CoreMatchers.is
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import static org.junit.Assert.assertEquals
 
 class SamplesTest {
 
     private File samplesDir
 
     @Before
-    public void setup() throws IOException {
+    void setup() throws IOException {
         samplesDir = new File('samples')
     }
 
     @Test
-    public void serverPlugin() {
+    void serverPlugin() {
         File projectDir = new File(samplesDir, 'server-plugin')
         BuildResult result = executeBuild(projectDir)
 
-        assertEquals(result.task(':build').getOutcome(), SUCCESS)
+        assertThat(result.task(':build').getOutcome(), is(SUCCESS))
     }
 
     @Test
-    public void serverPluginWithAlternativeBuildFile() {
+    void serverPluginWithAlternativeBuildFile() {
         File projectDir = new File(samplesDir, 'server-plugin')
         BuildResult result = executeBuild(projectDir, '-b', 'build-alt.gradle', 'clean', 'build')
 
-        assertEquals(result.task(':build').getOutcome(), SUCCESS)
+        assertThat(result.task(':build').getOutcome(), is(SUCCESS))
     }
 
     @Test
-    public void agentServerPlugin() {
+    void agentServerPlugin() {
         File projectDir = new File(samplesDir, 'agent-server-plugin')
         BuildResult result = executeBuild(projectDir)
 
-        assertEquals(result.task(':build').getOutcome(), SUCCESS)
+        assertThat(result.task(':build').getOutcome(), is(SUCCESS))
     }
 
     @Test
-    public void agentToolPlugin() {
+    void agentToolPlugin() {
         File projectDir = new File(samplesDir, 'agent-tool-plugin')
         BuildResult result = executeBuild(projectDir)
 
-        assertEquals(result.task(':build').getOutcome(), SUCCESS)
+        assertThat(result.task(':build').getOutcome(), is(SUCCESS))
     }
 
     @Test
-    public void multiProjectPlugin() {
+    void multiProjectPlugin() {
         File projectDir = new File(samplesDir, 'multi-project-plugin')
         BuildResult result = executeBuild(projectDir)
 
-        assertEquals(result.task(':server:build').getOutcome(), SUCCESS)
+        assertThat(result.task(':server:build').getOutcome(), is(SUCCESS))
     }
 
-    @Test @Ignore("currently failing to download the kotlin-gradle-plugin")
-    public void 'build kotlin plugin'() {
+    @Test
+    void 'build kotlin plugin'() {
         File projectDir = new File(samplesDir, 'kotlin-plugin')
-        BuildResult result = executeBuildWithVersion(projectDir, '3.3')
+        BuildResult result = executeBuildWithVersion(projectDir, '3.5-rc-1')
 
-        assertEquals(result.task(':server:build').getOutcome(), SUCCESS)
+        assertThat(result.task(':server:build').getOutcome(), is(SUCCESS))
     }
 
-    private BuildResult executeBuild(File projectDir, String... args = ['clean', 'build']) {
+    private static BuildResult executeBuild(File projectDir, String... args = ['clean', 'build']) {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withArguments(args)
@@ -91,7 +91,7 @@ class SamplesTest {
         return result
     }
 
-    private BuildResult executeBuildWithVersion(File projectDir, String version, String... args = ['clean', 'build']) {
+    private static BuildResult executeBuildWithVersion(File projectDir, String version, String... args = ['clean', 'build']) {
         BuildResult result = GradleRunner.create()
                 .withProjectDir(projectDir)
                 .withArguments(args)

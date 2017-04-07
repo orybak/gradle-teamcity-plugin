@@ -38,10 +38,6 @@ class TeamCityEnvironment {
 
     private List<String> agentOptions = []
 
-    TeamCityEnvironment() {
-        this('default')
-    }
-
     TeamCityEnvironment(String name) {
         this.name = name
     }
@@ -55,6 +51,11 @@ class TeamCityEnvironment {
     }
 
     def setPlugins(Object plugins) {
+        this.plugins.clear()
+        this.plugins.addAll(plugins)
+    }
+
+    def setPlugins(List<Object> plugins) {
         this.plugins.clear()
         this.plugins.addAll(plugins)
     }

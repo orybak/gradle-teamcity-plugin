@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Rod MacKenzie
+ * Copyright 2017 Rod MacKenzie
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rodm.teamcity.tasks
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.file.FileCollection
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.TaskAction
+package com.github.rodm.teamcity
 
-class UndeployPlugin extends DefaultTask {
-
-    @InputFiles
-    FileCollection files
-
-    UndeployPlugin() {
-        group = 'TeamCity'
-        description = 'Undeploy plugin'
-    }
-
-    @TaskAction
-    public void undeploy() {
-        project.delete(getFiles())
+class TestSupport {
+    static String normalizePath(File path) {
+        path.canonicalPath.replace('\\', '/')
     }
 }

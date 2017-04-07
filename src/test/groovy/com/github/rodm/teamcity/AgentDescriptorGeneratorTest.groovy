@@ -18,14 +18,19 @@ package com.github.rodm.teamcity
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 import static XPathMatcher.hasXPath
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.not
 
-public class AgentDescriptorGeneratorTest {
+class AgentDescriptorGeneratorTest {
+
+    @Rule
+    public final TemporaryFolder projectDir = new TemporaryFolder()
 
     private Project project
 
@@ -36,8 +41,9 @@ public class AgentDescriptorGeneratorTest {
     private AgentPluginDescriptorGenerator generator
 
     @Before
-    public void setup() {
+    void setup() {
         project = ProjectBuilder.builder()
+                .withProjectDir(projectDir.root)
                 .withName('test-plugin')
                 .build()
         project.apply plugin: 'com.github.rodm.teamcity-agent'
@@ -47,51 +53,51 @@ public class AgentDescriptorGeneratorTest {
     }
 
     @Test
-    public void writesRootNode() {
+    void writesRootNode() {
         generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('/teamcity-agent-plugin'))
     }
 
     @Test
-    public void writesPluginDeployment() {
+    void writesPluginDeployment() {
         descriptor.deployment = new PluginDeployment()
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('/teamcity-agent-plugin/plugin-deployment'))
         assertThat(writer.toString(), not(hasXPath('/teamcity-agent-plugin/plugin-deployment/@use-separate-classloader')))
     }
 
     @Test
-    public void writeOptionalUseSeparateClassloader() {
+    void writeOptionalUseSeparateClassloader() {
         descriptor.deployment = new PluginDeployment()
         descriptor.deployment.useSeparateClassloader = true
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('//plugin-deployment/@use-separate-classloader', equalTo('true')))
     }
 
     @Test
-    public void writeOptionalUseSeparateClassloaderWhenFalse() {
+    void writeOptionalUseSeparateClassloaderWhenFalse() {
         descriptor.deployment = new PluginDeployment()
         descriptor.deployment.useSeparateClassloader = false
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('//plugin-deployment/@use-separate-classloader', equalTo('false')))
     }
 
     @Test
-    public void writePluginDeploymentExecutableFiles() {
+    void writePluginDeploymentExecutableFiles() {
         descriptor.deployment = new PluginDeployment()
         descriptor.deployment.executableFiles {
             include 'file1'
             include 'file2'
         }
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('//plugin-deployment/layout/executable-files'))
         assertThat(writer.toString(), hasXPath('//executable-files/include[1]/@name', equalTo('file1')))
@@ -99,33 +105,33 @@ public class AgentDescriptorGeneratorTest {
     }
 
     @Test
-    public void writePluginDeploymentExecutableFilesOnlyIfSpecified() {
+    void writePluginDeploymentExecutableFilesOnlyIfSpecified() {
         descriptor.deployment = new PluginDeployment()
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), not(hasXPath('//plugin-deployment/layout')))
         assertThat(writer.toString(), not(hasXPath('//plugin-deployment/layout/executable-files')))
     }
 
     @Test
-    public void writesToolDeployment() {
+    void writesToolDeployment() {
         descriptor.deployment = new ToolDeployment()
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('/teamcity-agent-plugin/tool-deployment'))
     }
 
     @Test
-    public void writeToolDeploymentExecutableFiles() {
+    void writeToolDeploymentExecutableFiles() {
         descriptor.deployment = new ToolDeployment()
         descriptor.deployment.executableFiles {
             include 'file1'
             include 'file2'
         }
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), hasXPath('//tool-deployment/layout/executable-files'))
         assertThat(writer.toString(), hasXPath('//executable-files/include[1]/@name', equalTo('file1')))
@@ -133,17 +139,17 @@ public class AgentDescriptorGeneratorTest {
     }
 
     @Test
-    public void writeToolDeploymentExecutableFilesOnlyIfSpecified() {
+    void writeToolDeploymentExecutableFilesOnlyIfSpecified() {
         descriptor.deployment = new PluginDeployment()
 
-        generator.writeTo(writer);
+        generator.writeTo(writer)
 
         assertThat(writer.toString(), not(hasXPath('//plugin-deployment/layout')))
         assertThat(writer.toString(), not(hasXPath('//plugin-deployment/layout/executable-files')))
     }
 
     @Test
-    public void writePluginDependency() {
+    void writePluginDependency() {
         descriptor.dependencies {
             plugin 'plugin-name'
         }
@@ -154,7 +160,7 @@ public class AgentDescriptorGeneratorTest {
     }
 
     @Test
-    public void writeToolDependency() {
+    void writeToolDependency() {
         descriptor.dependencies {
             tool 'tool-name'
         }
